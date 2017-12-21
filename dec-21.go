@@ -73,12 +73,12 @@ func main() {
 	fmt.Printf("Setup in %v\n", time.Since(tS))
 
 	tA := time.Now()
-	fmt.Printf("A: %d (in %v)\n", solveA(imageFromString(".#./..#/###"), rules, 5), time.Since(tA))
+	fmt.Printf("A: %d (in %v)\n", solve(imageFromString(".#./..#/###"), rules, 5), time.Since(tA))
 	tB := time.Now()
-	fmt.Printf("A: %d (in %v)\n", solveA(imageFromString(".#./..#/###"), rules, 18), time.Since(tB))
+	fmt.Printf("B: %d (in %v)\n", solve(imageFromString(".#./..#/###"), rules, 18), time.Since(tB))
 }
 
-func solveA(img *image, rules map[string]*image, iter int) int {
+func solve(img *image, rules map[string]*image, iter int) int {
 	for i := 0; i < iter; i++ {
 		subSize := getSubSize(img)
 
