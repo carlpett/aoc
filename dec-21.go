@@ -103,37 +103,21 @@ func getSubSize(img *image) int {
 }
 
 func enhance(img *image, rules map[string]*image) *image {
-	e, found := rules[img.ruleString()]
-	if found {
-		return e
+	needle := img.copy()
+	funcs := []func(*image){
+		func(img *image) {}, // Noop
+		func(img *image) { flip(img, horizontal) },
+		func(img *image) { flip(img, vertical) },
+		func(img *image) { rotate(img) },
+		func(img *image) { flip(img, vertical) },
+		func(img *image) { rotate(img) },
+		func(img *image) { flip(img, horizontal) },
 	}
-	e, found = rules[flip(img, horizontal).ruleString()]
-	if found {
-		return e
-	}
-	e, found = rules[flip(img, vertical).ruleString()]
-	if found {
-		return e
-	}
-	r1 := rotate(img)
-	e, found = rules[r1.ruleString()]
-	if found {
-		return e
-	}
-	r2 := flip(r1, vertical)
-	e, found = rules[r2.ruleString()]
-	if found {
-		return e
-	}
-	r3 := rotate(r2)
-	e, found = rules[r3.ruleString()]
-	if found {
-		return e
-	}
-	r4 := flip(r2, horizontal)
-	e, found = rules[r4.ruleString()]
-	if found {
-		return e
+	for _, fn := range funcs {
+		fn(&needle)
+		if e, found := rules[needle.ruleString()]; found {
+			return e
+		}
 	}
 
 	panic("Did not find enhancement!")
@@ -166,26 +150,26 @@ type dim int
 const (
 	vertical dim = iota
 	horizontal
+	diagonal
 )
 
-func flip(img *image, dim dim) *image {
-	flipped := img.copy()
+func flip(img *image, dim dim) {
 	switch dim {
 	case vertical:
-		flipped.pixels[0], flipped.pixels[flipped.size-1] = flipped.pixels[flipped.size-1], flipped.pixels[0]
+		img.pixels[0], img.pixels[img.size-1] = img.pixels[img.size-1], img.pixels[0]
 	case horizontal:
-		for r := 0; r < flipped.size; r++ {
-			flipped.pixels[r][0], flipped.pixels[r][flipped.size-1] = flipped.pixels[r][flipped.size-1], flipped.pixels[r][0]
+		for r := 0; r < img.size; r++ {
+			img.pixels[r][0], img.pixels[r][img.size-1] = img.pixels[r][img.size-1], img.pixels[r][0]
+		}
+	case diagonal:
+		for r := 0; r < (img.size+1)/2; r++ {
+			for c := 0; c < (img.size+1)/2; c++ {
+				img.pixels[r][c], img.pixels[img.size-c-1][img.size-r-1] = img.pixels[img.size-c-1][img.size-r-1], img.pixels[r][c]
+			}
 		}
 	}
-	return &flipped
 }
-func rotate(img *image) *image {
-	rotated := newImage(img.size)
-	for r := 0; r < img.size; r++ {
-		for c := 0; c < img.size; c++ {
-			rotated.pixels[r][c] = img.pixels[img.size-c-1][img.size-r-1]
-		}
-	}
-	return rotated
+func rotate(img *image) {
+	flip(img, diagonal)
+	flip(img, horizontal)
 }
