@@ -1,22 +1,30 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
+
+	"flag"
+	"log"
+	"runtime"
+	"runtime/pprof"
 )
 
 type image struct {
 	size   int
 	pixels [][]string
+	rs     string
 }
 
 func newImage(size int) *image {
-	img := &image{}
-	img.size = size
-	img.pixels = make([][]string, img.size)
+	img := &image{
+		size:   size,
+		pixels: make([][]string, size),
+	}
 	for r := 0; r < img.size; r++ {
 		img.pixels[r] = make([]string, img.size)
 	}
@@ -24,7 +32,7 @@ func newImage(size int) *image {
 }
 func imageFromString(s string) *image {
 	size := strings.Count(s, "/") + 1
-	i := image{pixels: make([][]string, size), size: size}
+	i := image{pixels: make([][]string, size), size: size, rs: s}
 	for idx, row := range strings.Split(s, "/") {
 		i.pixels[idx] = strings.Split(row, "")
 	}
@@ -32,11 +40,20 @@ func imageFromString(s string) *image {
 }
 
 func (i *image) ruleString() string {
-	s := make([]string, i.size)
-	for idx, r := range i.pixels {
-		s[idx] = strings.Join(r, "")
+	if i.rs != "" {
+		return i.rs
 	}
-	return strings.Join(s, "/")
+	b := new(bytes.Buffer) //bytes.NewBuffer(make([]byte, 0, i.size*i.size))
+	for idx, r := range i.pixels {
+		for _, s := range r {
+			b.WriteString(s)
+		}
+		if idx < i.size-1 {
+			b.WriteString("/")
+		}
+	}
+	i.rs = b.String()
+	return i.rs
 }
 
 func (i *image) String() string {
@@ -47,18 +64,33 @@ func (i *image) String() string {
 	return strings.Join(s, "\n")
 }
 
-func (i *image) copy() image {
+func (i *image) copy() *image {
 	c := image{}
 	c.size = i.size
 	c.pixels = make([][]string, c.size)
+	c.rs = i.rs
 	for r := 0; r < i.size; r++ {
 		c.pixels[r] = make([]string, c.size)
 		copy(c.pixels[r], i.pixels[r])
 	}
-	return c
+	return &c
 }
 
+var profile = flag.Bool("profile", false, "")
+
 func main() {
+	flag.Parse()
+	if *profile {
+		fmt.Println("Profiling")
+		f, err := os.Create("dec-21.cpu")
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+	}
+
 	tS := time.Now()
 	b, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
@@ -76,6 +108,20 @@ func main() {
 	fmt.Printf("A: %d (in %v)\n", solve(imageFromString(".#./..#/###"), rules, 5), time.Since(tA))
 	tB := time.Now()
 	fmt.Printf("B: %d (in %v)\n", solve(imageFromString(".#./..#/###"), rules, 18), time.Since(tB))
+
+	if *profile {
+		pprof.StopCPUProfile()
+
+		f, err := os.Create("dec-21.mem")
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+		f.Close()
+	}
 }
 
 func solve(img *image, rules map[string]*image, iter int) int {
@@ -102,7 +148,12 @@ func getSubSize(img *image) int {
 	return 3
 }
 
+var enhancedMemory = make(map[string]*image)
+
 func enhance(img *image, rules map[string]*image) *image {
+	if mem, ok := enhancedMemory[img.ruleString()]; ok {
+		return mem //.copy()
+	}
 	needle := img.copy()
 	funcs := []func(*image){
 		func(img *image) {}, // Noop
@@ -114,12 +165,12 @@ func enhance(img *image, rules map[string]*image) *image {
 		func(img *image) { flip(img, horizontal) },
 	}
 	for _, fn := range funcs {
-		fn(&needle)
+		fn(needle)
 		if e, found := rules[needle.ruleString()]; found {
+			enhancedMemory[img.ruleString()] = e
 			return e
 		}
 	}
-
 	panic("Did not find enhancement!")
 }
 
@@ -168,6 +219,7 @@ func flip(img *image, dim dim) {
 			}
 		}
 	}
+	img.rs = ""
 }
 func rotate(img *image) {
 	flip(img, diagonal)
