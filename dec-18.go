@@ -87,7 +87,7 @@ func solveB(instructions [][]string) int {
 	go func() {
 		for {
 			select {
-			case <-time.After(1000 * time.Millisecond):
+			case <-time.After(time.Millisecond):
 				if p0.isBlocked && p1.isBlocked {
 					deadlock <- true
 					deadlock <- true
