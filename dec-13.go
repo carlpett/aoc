@@ -6,14 +6,34 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"flag"
+	"log"
+	"runtime"
+	"runtime/pprof"
 )
 
 type layer struct {
 	d int
 	r int
+	p int
 }
 
+var profile = flag.Bool("profile", false, "")
+
 func main() {
+	flag.Parse()
+	if *profile {
+		fmt.Println("Profiling")
+		f, err := os.Create("dec-13.cpu")
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+	}
+
 	tS := time.Now()
 	b, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
@@ -24,66 +44,74 @@ func main() {
 	for idx, line := range lines {
 		l := layer{}
 		fmt.Sscanf(line, "%d: %d", &l.d, &l.r)
+		l.p = period(l.r)
 		layers[idx] = l
 	}
 	fmt.Printf("Setup in %v\n", time.Since(tS))
 
 	tA := time.Now()
-	s, _ := solveA(layers, 0)
-	fmt.Printf("A: %d (in %v)\n", s, time.Since(tA))
+	fmt.Printf("A: %d (in %v)\n", solveA(layers), time.Since(tA))
 	tB := time.Now()
 	fmt.Printf("B: %d (in %v)\n", solveB(layers), time.Since(tB))
+
+	if *profile {
+		pprof.StopCPUProfile()
+
+		f, err := os.Create("dec-13.mem")
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+		f.Close()
+	}
+
 }
 
-func abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
+func period(r int) int {
+	return 2 * (r - 1)
 }
 
 var positions = make(map[int][]int)
 
-func scannerPos(t, r int) int {
-	var ps []int
-	if _, ok := positions[r]; !ok {
-		ps = make([]int, 2*r-1)
-		for i := 0; i < 2*r-1; i++ {
-			if i >= r {
-				ps[i] = r - i%r - 2
-			} else {
-				ps[i] = i
-			}
-		}
-		positions[r] = ps
-	} else {
-		ps = positions[r]
+func genPos(r int) {
+	if _, ok := positions[r]; ok {
+		return
 	}
-	return ps[t%(2*(r-1))]
+
+	ps := make([]int, 2*r-1)
+	for i := 0; i < 2*r-1; i++ {
+		if i >= r {
+			ps[i] = r - i%r - 2
+		} else {
+			ps[i] = i
+		}
+	}
+	positions[r] = ps
 }
 
-func solveA(layers []layer, t int) (int, bool) {
-	caught := false
+func solveA(layers []layer) int {
 	severity := 0
-	lastDepth := 0
 	for _, l := range layers {
-		t += l.d - lastDepth
-		if scannerPos(t, l.r) == 0 {
-			caught = true
+		if l.d%l.p == 0 {
 			severity += l.r * l.d
 		}
-		lastDepth = l.d
 	}
-	return severity, caught
+	return severity
 }
 
 func solveB(layers []layer) int {
 	t := 0
+timeloop:
 	for {
-		_, caught := solveA(layers, t)
-		if !caught {
-			return t
-		}
 		t++
+		for _, l := range layers {
+			if (t+l.d)%l.p == 0 {
+				continue timeloop
+			}
+		}
+		return t
 	}
 }
