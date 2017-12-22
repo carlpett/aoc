@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	tS := time.Now()
 	b, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
 		panic(err)
@@ -19,12 +20,13 @@ func main() {
 	for ri, r := range rows {
 		m[ri], _ = strconv.Atoi(r)
 	}
+	fmt.Printf("Setup in %v\n", time.Since(tS))
 
-	tA := time.Now()
+	t := time.Now()
 	steps, loopLen := solve(m)
 	fmt.Printf("A: %d\n", steps)
 	fmt.Printf("B: %d\n", loopLen)
-	fmt.Println(time.Since(tA))
+	fmt.Printf("(in %v)\n", time.Since(t))
 }
 
 func max(m []int) (int, int) {

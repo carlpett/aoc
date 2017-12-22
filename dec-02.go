@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -24,8 +25,10 @@ func main() {
 		}
 	}
 
-	fmt.Printf("A: %d\n", solve(m, checksumA))
-	fmt.Printf("B: %d\n", solve(m, checksumB))
+	tA := time.Now()
+	fmt.Printf("A: %d (in %v)\n", solve(m, checksumA), time.Since(tA))
+	tB := time.Now()
+	fmt.Printf("B: %d (in %v)\n", solve(m, checksumB), time.Since(tB))
 }
 
 func solve(m [][]int, fn func([]int) int) int {

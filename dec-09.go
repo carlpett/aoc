@@ -8,17 +8,17 @@ import (
 )
 
 func main() {
-	t := time.Now()
+	tS := time.Now()
 	s := bufio.NewScanner(os.Stdin)
 	s.Split(bufio.ScanRunes)
 	s.Scan() // Get rid of leading {
-
 	groups := readGroup(s, 1)
-	a := groups.sumScore()
-	b := groups.sumGarbage()
-	fmt.Printf("A: %v\n", a)
-	fmt.Printf("B: %v\n", b)
-	fmt.Println(time.Since(t))
+	fmt.Printf("Setup in %v\n", time.Since(tS))
+
+	tA := time.Now()
+	fmt.Printf("A: %d (in %v)\n", groups.sumScore(), time.Since(tA))
+	tB := time.Now()
+	fmt.Printf("B: %d (in %v)\n", groups.sumGarbage(), time.Since(tB))
 }
 
 type group struct {

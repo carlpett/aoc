@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	tS := time.Now()
 	b, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
 		panic(err)
@@ -22,12 +23,12 @@ func main() {
 
 	mB := make([]int, len(m))
 	copy(mB, m)
+	fmt.Printf("Setup in %v\n", time.Since(tS))
+
 	tA := time.Now()
-	fmt.Printf("A: %d\n", solve(m, ppA))
-	fmt.Println(time.Since(tA))
+	fmt.Printf("A: %d (in %v)\n", solve(m, ppA), time.Since(tA))
 	tB := time.Now()
-	fmt.Printf("B: %d\n", solve(mB, ppB))
-	fmt.Println(time.Since(tB))
+	fmt.Printf("B: %d (in %v)\n", solve(mB, ppB), time.Since(tB))
 }
 
 func ppA(i int) int {

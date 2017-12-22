@@ -9,39 +9,42 @@ import (
 	"time"
 )
 
+const (
+	dataSize  = 256
+	blockSize = 16
+	rounds    = 64
+)
+
 func main() {
-	t := time.Now()
-	data := make([]int, 256)
-	for idx := range data {
-		data[idx] = idx
+	tS := time.Now()
+	dataA := make([]byte, dataSize)
+	dataB := make([]byte, dataSize)
+	dataT := make([]int, dataSize)
+	for idx := 0; idx < dataSize; idx++ {
+		dataA[idx] = byte(idx)
+		dataB[idx] = byte(idx)
+		dataT[idx] = idx
 	}
 
-	b, err := ioutil.ReadAll(os.Stdin)
+	lens, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
 		panic(err)
 	}
-	input := strings.Split(strings.TrimSpace(string(b)), ",")
-	lens := make([]int, len(input))
-	for idx, l := range input {
-		lens[idx], _ = strconv.Atoi(strings.TrimSpace(l))
-	}
+	fmt.Printf("Setup in %v\n", time.Since(tS))
 
-	n := hash(data, lens)
-	fmt.Printf("A: %v\n", n)
-	fmt.Println(time.Since(t))
-
-	d := []int{0, 1, 2, 3, 4}
-	hash(d, []int{3, 4, 1, 5})
-	fmt.Println(d)
+	tA := time.Now()
+	fmt.Printf("A: %d (in %v)\n", solveA(dataA, lens), time.Since(tA))
+	tB := time.Now()
+	fmt.Printf("B: %x (in %v)\n", solveB(dataB, lens), time.Since(tB))
 }
 
 type circularSlice struct {
-	s   []int
+	s   []byte
 	pos int
 	l   int
 }
 
-func newCircularSlice(s []int, pos, l int) (c circularSlice) {
+func newCircularSlice(s []byte, pos, l int) (c circularSlice) {
 	return circularSlice{
 		s:   s,
 		pos: pos,
@@ -65,14 +68,60 @@ func reverse(cs circularSlice) {
 	}
 }
 
-func hash(data []int, lens []int) int {
-	pos := 0
-	skip := 0
-	for _, l := range lens {
-		reverse(newCircularSlice(data, pos, l))
-		pos = (pos + l + skip) % len(data)
-		skip++
+func xor(bs []byte) byte {
+	var sum byte = 0
+	for _, b := range bs {
+		sum ^= b
+	}
+	return sum
+}
+
+func atob(s string) byte {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return byte(i)
+}
+
+func solveA(data []byte, lens []byte) int {
+	bs := make([]byte, 0)
+	for _, l := range strings.Split(strings.TrimSpace(string(lens)), ",") {
+		b := atob(strings.TrimSpace(l))
+		bs = append(bs, b)
+	}
+	hasher := KnotHasher{data: data}
+
+	hasher.hash(bs)
+	return int(hasher.data[0]) * int(hasher.data[1])
+}
+
+func solveB(data []byte, lens []byte) []byte {
+	magic := []byte{17, 31, 73, 47, 23}
+	lens = append(lens, magic...)
+	hasher := KnotHasher{data: data}
+
+	for r := 0; r < rounds; r++ {
+		hasher.hash(lens)
+	}
+	denseHash := make([]byte, dataSize/blockSize)
+	for block := 0; block < dataSize/blockSize; block++ {
+		denseHash[block] = xor(hasher.data[block*blockSize : (block+1)*blockSize])
 	}
 
-	return data[0] * data[1]
+	return denseHash
+}
+
+type KnotHasher struct {
+	pos  int
+	skip int
+	data []byte
+}
+
+func (kh *KnotHasher) hash(bs []byte) {
+	for _, b := range bs {
+		reverse(newCircularSlice(kh.data, kh.pos, int(b)))
+		kh.pos = (kh.pos + int(b) + kh.skip) % len(kh.data)
+		kh.skip++
+	}
 }

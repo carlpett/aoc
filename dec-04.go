@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -15,8 +16,10 @@ func main() {
 	}
 	phrases := strings.Split(strings.TrimSpace(string(b)), "\n")
 
-	fmt.Printf("A: %d\n", solve(phrases, identity))
-	fmt.Printf("B: %d\n", solve(phrases, sorted))
+	tA := time.Now()
+	fmt.Printf("A: %d (in %v)\n", solve(phrases, identity), time.Since(tA))
+	tB := time.Now()
+	fmt.Printf("B: %d (in %v)\n", solve(phrases, sorted), time.Since(tB))
 }
 
 func identity(s string) string {

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"time"
 )
 
 func main() {
@@ -17,8 +18,10 @@ func main() {
 		nums[i] = btoi(n)
 	}
 
-	fmt.Printf("A: %d\n", solve(nums, 1))
-	fmt.Printf("B: %d\n", solve(nums, len(nums)/2))
+	tA := time.Now()
+	fmt.Printf("A: %d (in %v)\n", solve(nums, 1), time.Since(tA))
+	tB := time.Now()
+	fmt.Printf("B: %d (in %v)\n", solve(nums, len(nums)/2), time.Since(tB))
 }
 
 func btoi(b byte) int {
