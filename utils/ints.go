@@ -39,6 +39,12 @@ func Min(a, b int) int {
 	}
 	return b
 }
+func Pow(a, b int) int {
+	return int(math.Pow(float64(a), float64(b)))
+}
+func Log10(a int) int {
+	return int(math.Log10(float64(a)))
+}
 
 func IntInSlice(s []int, candidate int) bool {
 	for _, v := range s {
