@@ -56,31 +56,6 @@ func solveA(grid [][]int) (int, int) {
 	return bestX - 1, bestY - 1
 }
 
-func solveB_bak(grid [][]int) (int, int, int) {
-	var bestX, bestY, bestSize, bestSum int
-	for sz := 0; sz <= 300; sz++ {
-		sum := 0
-		var xStart, yStart, szStart int
-		for xIdx := xStart; xIdx < 300-sz; xIdx++ {
-			for yIdx := yStart; yIdx < 300-sz; yIdx++ {
-				for sX := szStart; sX < sz; sX++ {
-					for sY := 0; sY < sz; sY++ {
-						sum += grid[xIdx+sX][yIdx+sY]
-					}
-				}
-				if sum > bestSum {
-					bestSum = sum
-					bestX = xIdx + 1
-					bestY = yIdx + 1
-					bestSize = sz
-				}
-			}
-		}
-	}
-	fmt.Println(bestSum)
-	return bestX, bestY, bestSize
-}
-
 func solveB(grid [][]int) (int, int, int) {
 	sat := make([][]int, len(grid))
 	for x := 0; x < len(sat); x++ {
