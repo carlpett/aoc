@@ -66,7 +66,7 @@ func solveB(g *graph) int {
 	return dist
 }
 
-type routePicker func([]int) int
+type routePicker func(...int) int
 
 func search(g *graph, path []string, dist int, rp routePicker) int {
 	nodes := g.nodes()
@@ -97,5 +97,5 @@ func search(g *graph, path []string, dist int, rp routePicker) int {
 		dists[idx] = search(g, append(path, o), dist+distance, rp)
 	}
 
-	return rp(dists)
+	return rp(dists...)
 }

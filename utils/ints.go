@@ -26,7 +26,7 @@ func Max(a, b int) int {
 	}
 	return b
 }
-func MaxList(is []int) int {
+func MaxList(is ...int) int {
 	best := -(1 << 32)
 	for _, d := range is {
 		best = Max(best, d)
@@ -38,6 +38,13 @@ func Min(a, b int) int {
 		return a
 	}
 	return b
+}
+func MinList(is ...int) int {
+	best := (1 << 32)
+	for _, d := range is {
+		best = Min(best, d)
+	}
+	return best
 }
 func Pow(a, b int) int {
 	return int(math.Pow(float64(a), float64(b)))

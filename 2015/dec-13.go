@@ -102,5 +102,5 @@ func search(g *graph, seating []string, previousMood int) int {
 		moods[idx] = search(g, append(seating, o), previousMood+mood)
 	}
 
-	return utils.MaxList(moods)
+	return utils.MaxList(moods...)
 }
