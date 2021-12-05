@@ -1,3 +1,4 @@
 dec-*
 !dec-*.go
 !dec-*.input
+profile.cpu

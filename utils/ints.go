@@ -14,6 +14,14 @@ func MustAtoi(s string) int {
 	return i
 }
 
+func MustAtoiSlice(ss []string) []int {
+	is := make([]int, 0, len(ss))
+	for _, s := range ss {
+		is = append(is, MustAtoi(s))
+	}
+	return is
+}
+
 func Abs(n int) int {
 	if n < 0 {
 		return -n
